@@ -1,0 +1,6 @@
+---
+limit_nofile_hard: 10240
+limit_nofile_soft: 5120
+limit_nproc_hard: 10240
+limit_nproc_soft: 5120
+...

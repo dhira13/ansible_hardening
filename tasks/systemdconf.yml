@@ -1,0 +1,32 @@
+---
+- name: Configure systemd system.conf
+  become: true
+  ansible.builtin.template:
+    src: etc/systemd/system.conf.j2
+    dest: /etc/systemd/system.conf
+    backup: true
+    mode: 0644
+    owner: root
+    group: root
+  notify:
+    - Reload systemd
+  tags:
+    - system
+    - systemd
+    - CCE-80784-2
+
+- name: Configure systemd user.conf
+  become: true
+  ansible.builtin.template:
+    src: etc/systemd/user.conf.j2
+    dest: /etc/systemd/user.conf
+    backup: true
+    mode: 0644
+    owner: root
+    group: root
+  notify:
+    - Reload systemd
+  tags:
+    - systemd
+    - users
+...

@@ -1,0 +1,31 @@
+---
+- name: Configure systemd resolved
+  become: true
+  ansible.builtin.template:
+    src: etc/systemd/resolved.conf.j2
+    dest: /etc/systemd/resolved.conf
+    backup: true
+    mode: 0644
+    owner: root
+    group: root
+  notify:
+    - Reload systemd
+  tags:
+    - resolved
+    - systemd
+    - CCE-84049-6
+
+- name: Add nameservers to resolv.conf
+  become: true
+  ansible.builtin.lineinfile:
+    dest: /etc/resolv.conf
+    line: "nameserver {{ item }}"
+    mode: 0644
+    owner: root
+    group: root
+    state: present
+  with_items: "{{ dns | split }}"
+  when: ansible_os_family == "RedHat"
+  tags:
+    - resolved
+...

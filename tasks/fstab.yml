@@ -1,0 +1,18 @@
+---
+- name: Remove /tmp from fstab
+  become: true
+  ansible.posix.mount:
+    path: /tmp
+    state: absent
+  tags:
+    - fstab
+
+- name: Remove floppy from fstab
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/fstab
+    state: absent
+    regexp: '^(.*)floppy(.*)$'
+  tags:
+    - fstab
+...
