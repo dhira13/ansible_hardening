@@ -1,0 +1,14 @@
+---
+- hosts: all
+  any_errors_fatal: true
+  become: true
+  tasks:
+    - ansible.builtin.include_role:
+        name: thechip911.hardening
+
+- hosts: all
+  any_errors_fatal: true
+  become: true
+  tasks:
+    - ansible.builtin.include_tasks: debug_facts.yml
+...

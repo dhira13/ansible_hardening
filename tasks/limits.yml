@@ -1,0 +1,44 @@
+---
+
+- name: Configure limits.conf
+  become: true
+  ansible.builtin.template:
+    src: etc/security/limits.conf.j2
+    dest: /etc/security/limits.conf
+    backup: true
+    mode: 0644
+    owner: root
+    group: root
+  tags:
+    - limits
+    - CCE-80955-8
+    - CCE-81038-2
+    - CIS-UBUNTU2004-1.5.4
+    - UBTU-20-010400
+
+- name: Configure coredump.conf
+  become: true
+  ansible.builtin.template:
+    src: etc/systemd/coredump.conf.j2
+    dest: /etc/systemd/coredump.conf
+    backup: true
+    mode: 0644
+    owner: root
+    group: root
+  tags:
+    - coredump
+    - systemd
+    - CCE-82251-0
+    - CCE-82252-8
+    - CIS-UBUNTU2004-1.5.4
+
+- name: Disable kdump service
+  become: true
+  ansible.builtin.systemd:
+    name: kdump.service
+    enabled: 'no'
+    state: stopped
+    masked: 'yes'
+  register: mask_kdump
+  failed_when: mask_kdump is not success and not "Could not find the requested service" in mask_kdump.msg
+...

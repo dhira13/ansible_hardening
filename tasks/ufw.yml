@@ -1,0 +1,211 @@
+---
+- name: Add the nf_conntrack module
+  become: true
+  community.general.modprobe:
+    name: nf_conntrack
+    state: present
+  tags:
+    - conntrack
+    - sysctl
+
+- name: Stat nf_conntrack_tcp_be_liberal
+  become: true
+  ansible.builtin.stat:
+    path: /proc/sys/net/netfilter/nf_conntrack_tcp_be_liberal
+  register: conntrackliberal
+  tags:
+    - conntrack
+    - sysctl
+
+# https://github.com/ansible/ansible/issues/45446
+- name: Enable nf_conntrack_tcp_be_liberal to keep connections alive
+  become: true
+  ansible.posix.sysctl:
+    name: net.netfilter.nf_conntrack_tcp_be_liberal
+    value: "1"
+    state: present
+    sysctl_set: true
+    sysctl_file: "{{ sysctl_conf_dir }}/zz-hardening.conf"
+    reload: true
+  when: conntrackliberal.stat.exists
+  tags:
+    - conntrack
+    - sysctl
+
+- name: Debian family UFW installation
+  become: true
+  ansible.builtin.apt:
+    name: "ufw"
+    state: present
+    install_recommends: false
+  when: ansible_os_family == "Debian"
+  tags:
+    - ufw
+    - CCE-82998-6
+    - M1037
+    - CIS-UBUNTU2004-3.5.1.1
+    - CIS-UBUNTU2004-3.5.1.3
+
+- name: RedHat family UFW installation
+  become: true
+  ansible.builtin.dnf:
+    name: "ufw"
+    state: present
+  when: ansible_os_family == "RedHat"
+  tags:
+    - ufw
+    - CCE-82998-6
+    - M1037
+
+- name: Set UFW IPT_SYSCTL
+  become: true
+  ansible.builtin.lineinfile:
+    regexp: "^IPT_SYSCTL="
+    line: "IPT_SYSCTL={{ sysctl_conf_dir }}/zz-hardening.conf"
+    dest: /etc/default/ufw
+    mode: 0640
+    state: present
+    create: false
+    backrefs: true
+  tags:
+    - ufw
+    - M1037
+
+- name: Enable UFW and set default deny incoming
+  become: true
+  community.general.ufw:
+    state: enabled
+    direction: incoming
+    policy: deny
+    log: true
+    logging: low
+    comment: ansible managed
+  tags:
+    - ufw
+    - CIS-UBUNTU2004-3.5.1.7
+    - D3-ITF
+    - M1037
+
+- name: Enable UFW and set default deny outgoing
+  become: true
+  community.general.ufw:
+    state: enabled
+    direction: outgoing
+    policy: deny
+    log: true
+    logging: low
+    comment: ansible managed
+  tags:
+    - ufw
+    - CIS-UBUNTU2004-3.5.1.7
+    - M1037
+
+- name: Stat UFW rules
+  become: true
+  ansible.builtin.shell: |
+    set -o pipefail
+    ufw show added | grep '^ufw' | grep -v "'ansible\smanaged'" | sed 's/ufw //g'
+  args:
+    executable: /bin/bash
+  failed_when: ufw_not_managed.rc > 1
+  changed_when: false
+  register: ufw_not_managed
+  tags:
+    - ufw
+    - M1037
+
+- name: Allow sshd port from administrator networks
+  become: true
+  community.general.ufw:
+    rule: limit
+    src: "{{ item }}"
+    port: "{{ sshd_port | int }}"
+    proto: tcp
+    comment: ansible managed
+  with_items:
+    - "{{ sshd_admin_net }}"
+  tags:
+    - ufw
+    - M1037
+
+- name: Allow outgoing specified ports
+  become: true
+  community.general.ufw:
+    rule: allow
+    port: '{{ item | int }}'
+    direction: out
+    comment: ansible managed
+  with_items:
+    - "{{ ufw_outgoing_traffic }}"
+  tags:
+    - ufw
+    - CIS-UBUNTU2004-3.5.1.5
+    - D3-OTF
+    - M1037
+
+- name: Deny loopback network traffic
+  become: true
+  community.general.ufw:
+    rule: deny
+    src: '{{ item }}'
+    comment: ansible managed
+  loop:
+    - 127.0.0.0/8
+    - ::1
+  tags:
+    - ufw
+    - CIS-UBUNTU2004-3.5.1.4
+    - M1037
+
+- name: Allow loopback traffic in
+  become: true
+  community.general.ufw:
+    rule: allow
+    interface: lo
+    direction: in
+    comment: ansible managed
+  tags:
+    - ufw
+    - CIS-UBUNTU2004-3.5.1.4
+    - M1037
+
+- name: Allow loopback traffic out
+  become: true
+  community.general.ufw:
+    rule: allow
+    interface: lo
+    direction: out
+    comment: ansible managed
+  tags:
+    - ufw
+    - CIS-UBUNTU2004-3.5.1.4
+    - M1037
+
+- name: Delete unmanaged UFW rules
+  become: true
+  ansible.builtin.command: ufw delete {{ item }}
+  when: ufw_not_managed.stdout_lines | length > 0 and not ansible_os_family == "RedHat"
+  with_items:
+    - "{{ ufw_not_managed.stdout_lines }}"
+  tags:
+    - ufw
+    - D3-OTF
+    - M1037
+
+- name: Configure conntrack sysctl
+  become: true
+  environment:
+    PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+  ansible.posix.sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value | int }}"
+    state: present
+    sysctl_set: true
+    sysctl_file: "{{ sysctl_conf_dir }}/zz-hardening.conf"
+  with_dict: "{{ conntrack_sysctl_settings }}"
+  notify:
+    - Restart sysctl
+  tags:
+    - conntrack
+    - sysctl
+...

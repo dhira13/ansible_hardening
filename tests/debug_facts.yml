@@ -1,0 +1,104 @@
+---
+- name: Debug python3-jmespath
+  become: true
+  package:
+    name: python3-jmespath
+    state: present
+  tags:
+    - debug
+
+- name: Debug "cpuinfo_rdrand handling, true"
+  debug:
+    msg: "cpuinfo_rdrand is {{ ansible_local.cpuinfo.rdrand }}, true"
+  when: ansible_local.cpuinfo.rdrand
+  tags:
+    - debug
+
+- name: Debug "cpuinfo_rdrand handling, false"
+  debug:
+    msg: "cpuinfo_rdrand is {{ ansible_local.cpuinfo.rdrand }}, false"
+  when: not ansible_local.cpuinfo.rdrand
+  tags:
+    - debug
+
+- name: Debug "ansible_local['cpuinfo']['rdrand'], true"
+  debug:
+    msg: "cpuinfo_rdrand is {{ ansible_local['cpuinfo']['rdrand'] }}, true"
+  when: ansible_local['cpuinfo']['rdrand']
+  tags:
+    - debug
+
+- name: Debug "ansible_local['cpuinfo']['rdrand'], false"
+  debug:
+    msg: "cpuinfo_rdrand is {{ ansible_local['cpuinfo']['rdrand'] }}, false"
+  when: not ansible_local['cpuinfo']['rdrand']
+  tags:
+    - debug
+
+- name: Debug "cpuinfo_rdrand handling, info"
+  debug:
+    msg: "cpuinfo_rdrand is {{ ansible_local.cpuinfo.rdrand }}"
+  tags:
+    - debug
+
+- name: Stat /var/run/reboot-required
+  ansible.builtin.stat:
+    path: /var/run/reboot-required
+  register: stat_reboot_required
+
+- name: Notify reboot handler
+  debug:
+  msg: "reboot_required is {{ stat_reboot_required.stat.exist }}"
+  when:
+    - ansible_distribution == "Ubuntu"
+    - stat_reboot_required.stat.exists
+
+- name: Debug "systemd_version handling, <= 100"
+  debug:
+    msg: "systemd version is {{ ansible_local.systemd.version }}, <= 100"
+  when: ansible_local.systemd.version <= 100
+  tags:
+    - debug
+
+- name: Debug "systemd_version handling, >= 100"
+  debug:
+    msg: "systemd version is {{ ansible_local.systemd.version }}, >= 100"
+  when: ansible_local.systemd.version >= 100
+  tags:
+    - debug
+
+- name: Debug "systemd_version handling, info"
+  debug:
+    msg: "systemd version is {{ ansible_local.systemd.version }}"
+  tags:
+    - debug
+
+- name: Get DSA keys
+  debug:
+    msg: "{{ item }}"
+  with_items:
+    - "{{ ansible_local['sshkeys'] | json_query('keys.*') }}"
+  when: item.type == "DSA"
+  tags:
+    - debug
+
+- name: Get short RSA keys
+  debug:
+    msg: "{{ item }}"
+  with_items:
+    - "{{ ansible_local['sshkeys'] | json_query('keys.*') }}"
+  when: (item.type == "RSA" and item.size <= 2048)
+  tags:
+    - debug
+
+- name: Get owner of old keys
+  vars:
+    - old_key: "{{ ansible_date_time.epoch | int - 3600 }}"
+  debug:
+    msg: "{{ item.user_name }}: {{ item.file }} - {{ item.modified_human }}"
+  with_items:
+    - "{{ ansible_local['sshkeys'] | json_query('keys.*') }}"
+  when: item.modified_epoch | int <= old_key | int and item.user_id >= 1000
+  tags:
+    - debug
+...

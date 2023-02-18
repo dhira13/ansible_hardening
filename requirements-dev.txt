@@ -1,0 +1,7 @@
+ansible
+ansible-lint
+ansible-playbook-grapher
+molecule
+molecule-vagrant
+passlib
+pytest-molecule

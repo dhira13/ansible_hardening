@@ -1,0 +1,16 @@
+---
+- name: Get Docker Install Script
+  become: true
+  ansible.builtin.command:
+    cmd: curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
+
+- name: Install Docker
+  become: true
+  ansible.builtin.command:
+    cmd: sh /tmp/get-docker.sh
+
+- name: Add User to Group
+  become: true
+  ansible.builtin.command:
+    cmd: sudo usermod -aG docker ubuntu
+...

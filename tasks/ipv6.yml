@@ -1,0 +1,44 @@
+---
+- name: Set Debian ipv6.disable GRUB cmdline
+  become: true
+  ansible.builtin.lineinfile:
+    line: 'GRUB_CMDLINE_LINUX="$GRUB_CMDLINE_LINUX ipv6.disable=1"'
+    dest: /etc/default/grub.d/99-hardening-ipv6.cfg
+    state: present
+    create: true
+    mode: 0640
+    owner: root
+    group: root
+  when: ansible_os_family == "Debian"
+  tags:
+    - ipv6
+    - CIS-UBUNTU2004-3.1.1
+
+- name: Set RedHat ipv6.disable GRUB cmdline
+  become: true
+  ansible.builtin.command:
+    cmd: 'grubby --update-kernel=ALL --args="ipv6.disable=1"'
+  register: grubby_update_kernel
+  when: ansible_os_family == "RedHat"
+  changed_when: grubby_update_kernel.rc != 0
+  failed_when: grubby_update_kernel.rc != 0
+  tags:
+    - ipv6
+
+- name: Configure sysctl to disable IPv6
+  become: true
+  environment:
+    PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+  ansible.posix.sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value | int }}"
+    state: present
+    sysctl_set: true
+    sysctl_file: "{{ sysctl_conf_dir }}/zz-hardening.conf"
+  when: system_has_ipv6 and disable_ipv6
+  with_dict: "{{ ipv6_disable_sysctl_settings }}"
+  notify:
+    - Restart sysctl
+  tags:
+    - ipv6
+...
