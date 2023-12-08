@@ -1,7 +1,7 @@
 ---
 galaxy_info:
   role_name: hardening
-  author: thechip911
+  author: dhira13
   description: AlmaLinux, Debian and Ubuntu hardening. systemd edition.
   license: apache
   min_ansible_version: "2.12"
