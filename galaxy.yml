@@ -1,0 +1,8 @@
+# Example galaxy.yml
+namespace: dhira13
+name: hardening
+version: 1.0.0
+license: MIT
+authors:
+  - dhira13
+
