@@ -2,8 +2,8 @@
 
 ## Supported Versions
 
-The current [upstream](https://github.com/thechip911/ansible-role-hardening)
-and the [latest published version](https://github.com/thechip911/ansible-role-hardening/releases) are supported.
+The current [upstream](https://github.com/dhira13/ansible_hardening)
+and the [latest published version](https://github.com/dhira13/ansible_hardening/releases) are supported.
 
 ## Reporting a Bug or Vulnerability
 

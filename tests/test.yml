@@ -4,7 +4,7 @@
   become: true
   tasks:
     - ansible.builtin.include_role:
-        name: thechip911.hardening
+        name: dhira13.ansible_hardening
 
 - hosts: all
   any_errors_fatal: true

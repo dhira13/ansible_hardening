@@ -7,12 +7,6 @@
 
 ```sh
 .
-├── LICENSE
-├── README.md
-├── SECURITY.md
-├── STRUCTURE.md
-├── TESTING.md
-├── Vagrantfile
 ├── defaults
 │   └── main
 │       ├── auditd.yml
@@ -37,11 +31,13 @@
 │       └── share
 │           └── dict
 │               └── passwords.list
+├── galaxy.yml
 ├── genREADME.sh
 ├── handlers
 │   └── main.yml
 ├── images
 │   └── ansible-role-hardening.svg
+├── LICENSE
 ├── meta
 │   └── main.yml
 ├── molecule
@@ -50,8 +46,8 @@
 │   ├── debian
 │   │   └── molecule.yml
 │   ├── default
-│   │   ├── INSTALL.rst
 │   │   ├── converge.yml
+│   │   ├── INSTALL.rst
 │   │   ├── molecule.yml
 │   │   └── verify.yml
 │   ├── redhat
@@ -63,10 +59,13 @@
 ├── postChecks.sh
 ├── provision
 │   └── setup.sh
+├── README.md
 ├── renovate.json
 ├── requirements-dev.txt
 ├── requirements.yml
 ├── runTests.sh
+├── SECURITY.md
+├── STRUCTURE.md
 ├── tasks
 │   ├── adduser.yml
 │   ├── aide.yml
@@ -80,6 +79,7 @@
 │   ├── disablemod.yml
 │   ├── disablenet.yml
 │   ├── disablewireless.yml
+│   ├── docker.yml
 │   ├── extras.yml
 │   ├── facts.yml
 │   ├── fstab.yml
@@ -98,10 +98,10 @@
 │   ├── packages.yml
 │   ├── password.yml
 │   ├── path.yml
-│   ├── post.yml
 │   ├── postfix.yml
-│   ├── pre.yml
+│   ├── post.yml
 │   ├── prelink.yml
+│   ├── pre.yml
 │   ├── resolvedconf.yml
 │   ├── rkhunter.yml
 │   ├── rootaccess.yml
@@ -120,12 +120,13 @@
 │   │   ├── ansible
 │   │   │   └── facts.d
 │   │   │       ├── cpuinfo.fact
-│   │   │       ├── reboot.fact
 │   │   │       ├── sshkeys.fact
 │   │   │       └── systemd.fact
 │   │   ├── audit
 │   │   │   └── rules.d
 │   │   │       └── hardening.rules.j2
+│   │   ├── cloud
+│   │   │   └── cloud.j2
 │   │   ├── default
 │   │   │   ├── rkhunter.j2
 │   │   │   └── useradd.j2
@@ -139,7 +140,8 @@
 │   │   │   ├── common-account.j2
 │   │   │   ├── common-auth.j2
 │   │   │   ├── common-password.j2
-│   │   │   └── login.j2
+│   │   │   ├── login.j2
+│   │   │   └── sshd.j2
 │   │   ├── profile.d
 │   │   │   └── initpath.sh.j2
 │   │   ├── security
@@ -161,11 +163,13 @@
 │           └── system
 │               ├── aidecheck.service.j2
 │               └── aidecheck.timer.j2
+├── TESTING.md
 ├── tests
 │   ├── debug_facts.yml
 │   ├── inventory
 │   └── test.yml
-└── tox.ini
+├── tox.ini
+└── Vagrantfile
 
-34 directories, 125 files
+35 directories, 128 files
 ```

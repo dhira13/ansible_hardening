@@ -7,7 +7,7 @@ Ubuntu server a bit more secure.
 Requires Ansible >= 2.12.
 
 Available on
-[Ansible Galaxy](https://galaxy.ansible.com/dhira13/hardening).
+[Ansible Galaxy](https://galaxy.ansible.com/dhira13/ansible_hardening).
 
 [AlmaLinux 8](https://almalinux.org/),
 [Debian 11](https://www.debian.org/),
@@ -21,7 +21,7 @@ Ubuntu [20.04 LTS (Focal Fossa)](https://releases.ubuntu.com/focal/) and
 > **Note**
 >
 > There is a [SLSA](https://slsa.dev/) artifact present under the
-> [slsa action workflow](https://github.com/Dhira13/ansible_hardening/actions/workflows/slsa.yml)
+> [slsa action workflow](https://github.com/dhira13/ansible_hardening/actions/workflows/slsa.yml)
 > for verification.
 
 ## Dependencies
@@ -39,11 +39,13 @@ None.
   tasks:
     - name: Include the hardening role
       ansible.builtin.include_role:
-        name: dhira13.hardening
+        name: dhira13.ansible_hardening
       vars:
         block_blacklisted: true
         sshd_admin_net:
-          - 10.0.0.0/16
+          - 10.0.2.0/24
+          - 192.168.0.0/24
+          - 192.168.1.0/24
         suid_sgid_permissions: false
 ...
 ```
@@ -61,20 +63,22 @@ None.
         name: git
         state: present
 
-    - name: Checkout dhira13.hardening
+    - name: Checkout dhira13.ansible_hardening
       become: true
       ansible.builtin.git:
-        repo: 'https://github.com/Dhira13/ansible_hardening'
-        dest: /etc/ansible/roles/dhira13.hardening
+        repo: 'https://github.com/dhira13/ansible_hardening'
+        dest: /etc/ansible/roles/dhira13.ansible_hardening
         version: master
 
     - name: Include the hardening role
       ansible.builtin.include_role:
-        name: dhira13.hardening
+        name: dhira13.ansible_hardening
       vars:
         block_blacklisted: true
         sshd_admin_net:
-          - 10.0.2.0/16
+          - 10.0.2.0/24
+          - 192.168.0.0/24
+          - 192.168.1.0/24
         suid_sgid_permissions: false
 ...
 ```
@@ -117,32 +121,6 @@ grub_audit_backlog_cmdline: audit_backlog_limit=8192
 grub_audit_cmdline: audit=1
 ```
 
-Enable `auditd` at boot using Grub.
-
-When `auditd_apply_audit_rules: 'yes'`, the role applies the auditd rules
-from the included template file.
-
-`auditd_action_mail_acct` should be a valid email address or alias.
-
-`auditd_admin_space_left_action` defines what action to take when the system has
-detected that it is low on disk space. `suspend` will cause the audit daemon to
-stop writing records to the disk.
-
-`auditd_max_log_file_action` sets what action to take when the system has
-detected that the max file size limit has been reached. E.g. the `rotate` option
-will cause the audit daemon to rotate the logs. The `keep_logs` option is
-similar to `rotate` except it does not use the `num_logs` setting. This prevents
-audit logs from being overwritten.
-
-`auditd_space_left_action` tells the system what action to take when the system
-has detected that it is low on disk space. `email` means that it will send a
-warning to the email account specified in `action_mail_acct` as well as
-sending the message to syslog.
-
-`auditd_mode` sets `auditd` failure mode, 0=silent 1=printk 2=panic.
-
-[auditd.conf(5)](https://man7.org/linux/man-pages/man5/auditd.conf.5.html)
-
 ### ./defaults/main/compilers.yml
 
 ```yaml
@@ -152,22 +130,16 @@ compilers:
   - cc
   - cc-[0-9]*
   - clang-[0-9]*
-  - gcc
-  - gcc-[0-9]*
   - go
   - make
   - rustc
 ```
-
-List of compilers that will be restricted to the root user.
 
 ### ./defaults/main/disablewireless.yml
 
 ```yaml
 disable_wireless: false
 ```
-
-If `true`, turn off all wireless interfaces.
 
 ### ./defaults/main/dns.yml
 
@@ -178,17 +150,6 @@ dnssec: allow-downgrade
 dns_over_tls: opportunistic
 ```
 
-IPv4 and IPv6 addresses to use as system and fallback DNS servers.
-If `dnssec` is set to "allow-downgrade" DNSSEC validation is attempted, but if
-the server does not support DNSSEC properly, DNSSEC mode is automatically
-disabled.
-
-If `dns_over_tls` is true, all connections to the server will be encrypted if
-the DNS server supports DNS-over-TLS and has a valid certificate.
-
-[systemd](https://github.com/Dhira13/hardening/blob/master/systemd.adoc#etcsystemdresolvedconf)
-option.
-
 ### ./defaults/main/ipv6.yml
 
 ```yaml
@@ -198,18 +159,14 @@ ipv6_disable_sysctl_settings:
   net.ipv6.conf.default.disable_ipv6: 1
 ```
 
-If `disable_ipv6: true`, IPv6 will be disabled.
-
 ### ./defaults/main/limits.yml
 
 ```yaml
-limit_nofile_hard: 1024
-limit_nofile_soft: 512
-limit_nproc_hard: 1024
-limit_nproc_soft: 512
+limit_nofile_hard: 10240
+limit_nofile_soft: 5120
+limit_nproc_hard: 10240
+limit_nproc_soft: 5120
 ```
-
-Maximum number of processes and open files.
 
 ### ./defaults/main/misc.yml
 
@@ -226,17 +183,6 @@ epel8_signing_keys:
 epel9_signing_keys:
   - FF8AD1344597106ECE813B918A3872BF3228467C
 ```
-
-If `install_aide: true` then [AIDE](https://aide.github.io/) will be installed
-and configured.
-
-If `reboot_ubuntu: true` an Ubuntu node will be rebooted if required.
-
-`redhat_signing_keys` are [RedHat Product Signing Keys](https://access.redhat.com/security/team/key/).
-
-The `epel7_signing_keys`, `epel8_signing_keys` and
-`epel9_signing_keys` are release specific
-[Fedora EPEL signing keys](https://getfedora.org/security/).
 
 ### ./defaults/main/module_blocklists.yml
 
@@ -258,6 +204,7 @@ misc_modules_blocklist:
   - cpia2
   - firewire-core
   - floppy
+  - ksmbd
   - n_hdlc
   - net-pf-31
   - pcspkr
@@ -275,13 +222,6 @@ net_modules_blocklist:
   - tipc
 ```
 
-Blocked kernel modules.
-
-Setting `block_blacklisted: true` will block, or disable, any automatic loading
-of `blacklisted` kernel modules. The reasoning behind this is that a blacklisted
-module can still be loaded manually with `modprobe module_name`. Using
-`install module_name /bin/true` prevents this.
-
 ### ./defaults/main/mount.yml
 
 ```yaml
@@ -289,22 +229,12 @@ hide_pid: 2
 process_group: root
 ```
 
-`hide_pid` sets `/proc/<pid>/` access mode.
-
-The `process_group` setting configures the group authorized to learn processes
-information otherwise prohibited by `hidepid=`.
-
-[/proc mount options](https://www.kernel.org/doc/html/latest/filesystems/proc.html#mount-options)
-
 ### ./defaults/main/ntp.yml
 
 ```yaml
 fallback_ntp: 2.ubuntu.pool.ntp.org 3.ubuntu.pool.ntp.org
 ntp: 0.ubuntu.pool.ntp.org 1.ubuntu.pool.ntp.org
 ```
-
-NTP server host names or IP addresses. [systemd](https://github.com/Dhira13/hardening/blob/master/systemd.adoc#etcsystemdtimesyncdconf)
-option.
 
 ### ./defaults/main/packages.yml
 
@@ -316,7 +246,6 @@ packages_blocklist:
   - avahi*
   - avahi-*
   - beep
-  - git
   - pastebinit
   - popularity-contest
   - prelink
@@ -356,6 +285,12 @@ packages_debian:
   - tcpd
   - vlock
   - wamerican
+  - zsh
+  - tree
+  - vifm
+  - pgcli
+  - postgresql
+  - libpam-google-authenticator
 packages_redhat:
   - audispd-plugins
   - audit
@@ -377,16 +312,10 @@ packages_ubuntu:
   - secureboot-db
 ```
 
-`system_upgrade: 'yes'` will run `apt upgrade` or
-`dnf update` if required.
-
-Packages to be installed depending of distribution
-and packages to be removed (`packages_blocklist`).
-
 ### ./defaults/main/password.yml
 
 ```yaml
-crypto_policy: FIPS
+crypto_policy: "DEFAULT:NO-SHA1"
 pwquality_config:
   dcredit: -1
   dictcheck: 1
@@ -401,25 +330,18 @@ pwquality_config:
   ucredit: -1
 ```
 
-Set [cryptographic policies](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/security_hardening/using-the-system-wide-cryptographic-policies_security-hardening)
-if `/etc/crypto-policies/config` exists.
-
-Configure the [libpwquality](https://manpages.ubuntu.com/manpages/focal/man5/pwquality.conf.5.html)
-library.
-
 ### ./defaults/main/sshd.yml
 
 ```yaml
 sshd_accept_env: LANG LC_*
 sshd_admin_net:
-  - 192.168.0.0/24
-  - 192.168.1.0/24
-sshd_allow_agent_forwarding: 'no'
+  - 10.20.0.0/16
+sshd_allow_agent_forwarding: 'yes'
 sshd_allow_groups: sudo
-sshd_allow_tcp_forwarding: 'no'
-sshd_authentication_methods: any
+sshd_allow_tcp_forwarding: 'yes'
+sshd_authentication_methods: publickey
 sshd_banner: /etc/issue.net
-sshd_challenge_response_authentication: 'no'
+sshd_challenge_response_authentication: 'yes'
 sshd_ciphers: chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes256-ctr
 sshd_client_alive_count_max: 1
 sshd_client_alive_interval: 200
@@ -430,7 +352,7 @@ sshd_host_key_algorithms: ssh-ed25519-cert-v01@openssh.com,ssh-rsa-cert-v01@open
 sshd_ignore_user_known_hosts: 'yes'
 sshd_kerberos_authentication: 'no'
 sshd_kex_algorithms: curve25519-sha256@libssh.org,ecdh-sha2-nistp521,ecdh-sha2-nistp384,ecdh-sha2-nistp256,diffie-hellman-group-exchange-sha256
-sshd_login_grace_time: 20
+sshd_login_grace_time: 120
 sshd_log_level: VERBOSE
 sshd_macs: hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512,hmac-sha2-256
 sshd_max_auth_tries: 3
@@ -453,65 +375,390 @@ sshd_use_pam: 'yes'
 sshd_x11_forwarding: 'no'
 ```
 
-For a explanation of the options not described below, please read
-[https://man.openbsd.org/sshd_config](https://man.openbsd.org/sshd_config).
-
-Only the network(s) defined in `sshd_admin_net` are allowed to
-connect to `sshd_port`. Note that additional rules need to be set up in order
-to allow access to additional services.
-
-OpenSSH login is allowed only for users whose primary group or supplementary
-group list matches one of the patterns in `sshd_allow_groups`.
-
-`sshd_allow_agent_forwarding` specifies whether ssh-agent(1) forwarding is
-permitted.
-
-`sshd_allow_tcp_forwarding` specifies whether TCP forwarding is permitted.
-The available options are `yes` or all to allow TCP forwarding, `no` to prevent
-all TCP forwarding, `local` to allow local (from the perspective of ssh(1))
-forwarding only or `remote` to allow remote forwarding only.
-
-`sshd_authentication_methods` specifies the authentication methods that must
-be successfully completed in order to grant access to a user.
-
-`sshd_log_level` gives the verbosity level that is used when logging messages.
-
-`sshd_max_auth_tries` and `sshd_max_sessions` specifies the maximum number of
-SSH authentication attempts permitted per connection and the maximum number of
-open shell, login or subsystem (e.g. sftp) sessions permitted per network
-connection.
-
-`sshd_password_authentication` specifies whether password authentication is
-allowed.
-
-`sshd_port` specifies the port number that sshd(8) listens on.
-
-`sshd_required_rsa_size`, RequiredRSASize, will only be set if SSH version is
-higher than 9.1.
-
 ### ./defaults/main/suid_sgid_blocklist.yml
 
 ```yaml
 suid_sgid_permissions: true
 suid_sgid_blocklist:
+  - 7z
+  - ab
+  - agetty
+  - alpine
   - ansible-playbook
+  - aoss
+  - apt
+  - apt-get
   - ar
+  - aria2c
+  - arj
+  - arp
   - as
+  - ascii-xfr
+  - ascii85
+  - ash
+  - aspell
   - at
+  - atobm
   - awk
+  - aws
   - base32
+  - base58
   - base64
+  - basenc
+  - basez
   - bash
+  - batcat
+  - bc
+  - bconsole
+  - bpftrace
+  - bridge
+  - bsd-write
+  - bundle
+  - bundler
   - busctl
   - busybox
-  [...]
+  - byebug
+  - bzip2
+  - c89
+  - c99
+  - cabal
+  - cancel
+  - capsh
+  - cat
+  - cdist
+  - certbot
+  - chage
+  - check_by_ssh
+  - check_cups
+  - check_log
+  - check_memory
+  - check_raid
+  - check_ssl_cert
+  - check_statusfile
+  - chfn
+  - chmod
+  - choom
+  - chown
+  - chroot
+  - chsh
+  - cmp
+  - cobc
+  - column
+  - comm
+  - composer
+  - cowsay
+  - cowthink
+  - cp
+  - cpan
+  - cpio
+  - cpulimit
+  - crash
+  - crontab
+  - csh
+  - csplit
+  - csvtool
+  - cupsfilter
+  - curl
+  - cut
+  - dash
+  - date
+  - dd
+  - debugfs
+  - dialog
+  - diff
+  - dig
+  - dmesg
+  - dmidecode
+  - dmsetup
+  - dnf
+  - docker
+  - dosbox
+  - dpkg
+  - dvips
+  - easy_install
+  - eb
+  - ed
+  - efax
+  - emacs
+  - env
+  - eqn
+  - espeak
+  - ex
+  - exiftool
+  - expand
+  - expect
+  - facter
+  - file
+  - find
+  - finger
+  - fish
+  - flock
+  - fmt
+  - fold
+  - fping
+  - ftp
+  - fusermount
+  - gawk
+  - gcc
+  - gcloud
+  - gcore
+  - gdb
+  - gem
+  - genie
+  - genisoimage
+  - ghc
+  - ghci
+  - gimp
+  - ginsh
+  - git
+  - grc
+  - grep
+  - gtester
+  - gzip
+  - hd
+  - head
+  - hexdump
+  - highlight
+  - hping3
+  - iconv
+  - iftop
+  - install
+  - ionice
+  - ip
+  - irb
+  - ispell
+  - jjs
+  - join
+  - journalctl
+  - jq
+  - jrunscript
+  - jtag
+  - knife
+  - ksh
+  - ksshell
+  - ksu
+  - kubectl
+  - latex
+  - latexmk
+  - ld.so
+  - ldconfig
+  - less
+  - lftp
+  - ln
+  - loginctl
+  - logsave
+  - look
+  - lp
+  - ltrace
+  - lua
+  - lualatex
+  - luatex
+  - lwp-download
+  - lwp-request
+  - mail
+  - make
+  - man
+  - mawk
+  - mksh
+  - mksh-static
+  - mlocate
+  - more
+  - mosquitto
+  - mount
+  - mount.nfs
+  - msfconsole
+  - msgattrib
+  - msgcat
+  - msgconv
+  - msgfilter
+  - msgmerge
+  - msguniq
+  - mtr
+  - multitime
+  - mv
+  - mysql
+  - nano
+  - nasm
+  - nawk
+  - nc
+  - neofetch
+  - netfilter-persistent
+  - newgrp
+  - nft
+  - nice
+  - nl
+  - nm
+  - nmap
+  - node
+  - nohup
+  - npm
+  - nroff
+  - nsenter
+  - ntfs-3g
+  - octave
+  - od
+  - openssl
+  - openvpn
+  - openvt
+  - opkg
+  - pandoc
+  - paste
+  - pax
+  - pdb
+  - pdflatex
+  - pdftex
+  - perf
+  - perl
+  - perlbug
+  - pg
+  - php
+  - pic
+  - pico
+  - pidstat
+  - ping
+  - ping6
+  - pip
+  - pkexec
+  - pkg
+  - posh
+  - pppd
+  - pr
+  - pry
+  - psad
+  - psftp
+  - psql
+  - ptx
+  - puppet
+  - python
+  - rake
+  - rbash
+  - readelf
+  - red
+  - redcarpet
+  - restic
+  - rev
+  - rlogin
+  - rlwrap
+  - rpm
+  - rpmdb
+  - rpmquery
+  - rpmverify
+  - rsync
+  - rtorrent
+  - ruby
+  - run-mailcap
+  - run-parts
+  - rview
+  - rvim
+  - sash
+  - scanmem
+  - scp
+  - screen
+  - script
+  - scrot
+  - sed
+  - service
+  - setarch
+  - setfacl
+  - setlock
+  - sftp
+  - sg
+  - sh
+  - shuf
+  - slsh
+  - smbclient
+  - snap
+  - socat
+  - socket
+  - soelim
+  - softlimit
+  - sort
+  - split
+  - sqlite3
+  - ss
+  - ssh
+  - ssh-keygen
+  - ssh-keyscan
+  - sshpass
+  - start-stop-daemon
+  - stdbuf
+  - strace
+  - strings
+  - su
+  - sysctl
+  - systemctl
+  - systemd-resolve
+  - tac
+  - tail
+  - tar
+  - task
+  - taskset
+  - tasksh
+  - tbl
+  - tclsh
+  - tcpdump
+  - tcsh
+  - tee
+  - telnet
+  - tex
+  - tftp
+  - tic
+  - time
+  - timedatectl
+  - timeout
+  - tmate
+  - top
+  - torify
+  - torsocks
+  - traceroute6.iputils
+  - troff
+  - tshark
+  - ul
+  - umount
+  - unexpand
+  - uniq
+  - unshare
+  - unzip
+  - update-alternatives
+  - uudecode
+  - uuencode
+  - valgrind
+  - vi
+  - view
+  - vigr
+  - vim
+  - vimdiff
+  - vipw
+  - virsh
+  - volatility
+  - w3m
+  - wall
+  - watch
+  - wc
+  - wget
+  - whiptail
+  - whois
+  - wireshark
+  - wish
+  - write
+  - xargs
+  - xdotool
+  - xelatex
+  - xetex
+  - xmodmap
+  - xmore
+  - xpad
+  - xxd
+  - xz
+  - yarn
+  - yash
+  - yelp
+  - yum
+  - zathura
+  - zip
+  - zsoelim
+  - zypper
 ```
-
-If `suid_sgid_permissions: true` loop through `suid_sgid_blocklist` and remove
-any SUID/SGID permissions.
-
-A complete file list is available in
-[defaults/main/suid_sgid_blocklist.yml](defaults/main/suid_sgid_blocklist.yml).
 
 ### ./defaults/main/sysctl.yml
 
@@ -579,15 +826,12 @@ generic_sysctl_settings:
   kernel.unprivileged_bpf_disabled: 1
   kernel.yama.ptrace_scope: 2
   net.core.bpf_jit_harden: 2
+  vm.max_map_count: 262144
 
 conntrack_sysctl_settings:
   net.netfilter.nf_conntrack_max: 2000000
   net.netfilter.nf_conntrack_tcp_loose: 0
 ```
-
-`sysctl` configuration.
-
-[sysctl.conf](https://linux.die.net/man/5/sysctl.conf)
 
 ### ./defaults/main/ufw.yml
 
@@ -600,12 +844,8 @@ ufw_outgoing_traffic:
   - 123
   - 443
   - 853
+  - 5432
 ```
-
-`ufw_enable: true` installs and configures `ufw` with related rules. Set it to
-`false` in order to install and configure a firewall manually.
-`ufw_outgoing_traffic` opens the specific `ufw` ports,
-allowing outgoing traffic.
 
 ### ./defaults/main/users.yml
 
@@ -620,11 +860,9 @@ delete_users:
   - uucp
 ```
 
-Users to be removed.
-
 ## Recommended Reading
 
-[Comparing the DISA STIG and CIS Benchmark values](https://github.com/Dhira13/publications/blob/master/ubuntu_comparing_guides_benchmarks.md)
+[Comparing the DISA STIG and CIS Benchmark values](https://github.com/dhira13/publications/blob/master/ubuntu_comparing_guides_benchmarks.md)
 
 [Center for Internet Security Linux Benchmarks](https://www.cisecurity.org/cis-benchmarks/)
 
@@ -634,14 +872,14 @@ Users to be removed.
 
 [SCAP Security Guides](https://static.open-scap.org/)
 
-[Security focused systemd configuration](https://github.com/Dhira13/hardening/blob/master/systemd.adoc)
+[Security focused systemd configuration](https://github.com/dhira13/ansible_hardening/blob/master/systemd.adoc)
 
 ## Contributing
 
 Do you want to contribute? Great! Contributions are always welcome,
 no matter how large or small. If you found something odd, feel free to submit a
 issue, improve the code by creating a pull request, or by
-[sponsoring this project](https://github.com/sponsors/Dhira13).
+[sponsoring this project](https://github.com/sponsors/dhira13).
 
 ## License
 
@@ -649,5 +887,4 @@ Apache License Version 2.0
 
 ## Author Information
 
-[https://github.com/Dhira13](https://github.com/Dhira13 "github.com/Dhira13")
-
+[https://github.com/dhira13](https://github.com/dhira13 "github.com/dhira13")

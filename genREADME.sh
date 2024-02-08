@@ -19,7 +19,7 @@ Ubuntu server a bit more secure.
 Requires Ansible >= ${ANSIBLE_V}.
 
 Available on
-[Ansible Galaxy](https://galaxy.ansible.com/thechip911/hardening).
+[Ansible Galaxy](https://galaxy.ansible.com/dhira13/ansible_hardening).
 
 [AlmaLinux 8](https://almalinux.org/),
 [Debian 11](https://www.debian.org/),
@@ -33,7 +33,7 @@ Ubuntu [20.04 LTS (Focal Fossa)](https://releases.ubuntu.com/focal/) and
 > **Note**
 >
 > There is a [SLSA](https://slsa.dev/) artifact present under the
-> [slsa action workflow](https://github.com/thechip911/ansible-role-hardening/actions/workflows/slsa.yml)
+> [slsa action workflow](https://github.com/dhira13/ansible_hardening/actions/workflows/slsa.yml)
 > for verification.
 
 ## Dependencies
@@ -51,7 +51,7 @@ None.
   tasks:
     - name: Include the hardening role
       ansible.builtin.include_role:
-        name: thechip911.hardening
+        name: dhira13.ansible_hardening
       vars:
         block_blacklisted: true
         sshd_admin_net:
@@ -75,16 +75,16 @@ None.
         name: git
         state: present
 
-    - name: Checkout thechip911.hardening
+    - name: Checkout dhira13.
       become: true
       ansible.builtin.git:
-        repo: 'https://github.com/thechip911/ansible-role-hardening'
-        dest: /etc/ansible/roles/thechip911.hardening
+        repo: 'https://github.com/dhira13/ansible_hardening'
+        dest: /etc/ansible/roles/dhira13.
         version: master
 
     - name: Include the hardening role
       ansible.builtin.include_role:
-        name: thechip911.hardening
+        name: dhira13.
       vars:
         block_blacklisted: true
         sshd_admin_net:
@@ -126,7 +126,7 @@ done
 echo
 echo "## Recommended Reading
 
-[Comparing the DISA STIG and CIS Benchmark values](https://github.com/thechip911/publications/blob/master/ubuntu_comparing_guides_benchmarks.md)
+[Comparing the DISA STIG and CIS Benchmark values](https://github.com/dhira13/publications/blob/master/ubuntu_comparing_guides_benchmarks.md)
 
 [Center for Internet Security Linux Benchmarks](https://www.cisecurity.org/cis-benchmarks/)
 
@@ -136,14 +136,14 @@ echo "## Recommended Reading
 
 [SCAP Security Guides](https://static.open-scap.org/)
 
-[Security focused systemd configuration](https://github.com/thechip911/hardening/blob/master/systemd.adoc)
+[Security focused systemd configuration](https://github.com/dhira13/hardening/blob/master/systemd.adoc)
 
 ## Contributing
 
 Do you want to contribute? Great! Contributions are always welcome,
 no matter how large or small. If you found something odd, feel free to submit a
 issue, improve the code by creating a pull request, or by
-[sponsoring this project](https://github.com/sponsors/thechip911).
+[sponsoring this project](https://github.com/sponsors/dhira13).
 
 ## License
 
@@ -151,7 +151,7 @@ Apache License Version 2.0
 
 ## Author Information
 
-[https://github.com/thechip911](https://github.com/thechip911 \"github.com/thechip911\")"
+[https://github.com/dhira13](https://github.com/dhira13 \"github.com/dhira13\")"
 } > ./README.md
 
 {
@@ -177,9 +177,9 @@ echo '```'
 echo
 echo "If the [runTests.sh](runTests.sh) script is executed as \`runTests.sh vagrant\`,
 [Vagrant](https://www.vagrantup.com/ \"Vagrant\") will configure hosts and run the
-\`thechip911.hardening\` role, it will then run
+\`dhira13.\` role, it will then run
 [Lynis](https://github.com/CISOfy/lynis/ \"Lynis\") and \`bats\` tests from the
-[thechip911/hardening](https://github.com/thechip911/hardening \"thechip911/hardening\")
+[dhira13/ansible_hardening](https://github.com/dhira13/ansible_hardening \"dhira13/ansible_hardening\")
 repository if the host is using [Ubuntu](https://ubuntu.com/ \"Ubuntu\")."
 
 echo
